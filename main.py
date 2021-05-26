@@ -86,6 +86,14 @@ class Node:
 
 # A* functions
 def h(p1, p2):
+    # Heuristic function
     x1, y1 = p1
     x2, y2 = p2
     return abs(x1 - x2) + abs(y1 - y2)
+
+
+def makeGrid(rows, width):
+    gap = width // rows
+    grid = [[Node(i, j, gap, rows) for j in range(rows)] for i in range(rows)]
+
+    return grid
