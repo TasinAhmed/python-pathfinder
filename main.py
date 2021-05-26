@@ -69,13 +69,23 @@ class Node:
         self.color == END_COLOR
 
     def makePath(self):
+        # Make node a path
         self.color == PATH_COLOR
 
     def draw(self, win):
+        # Draw the node onto the window
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.width))
 
     def updateNeighbors(self, grid):
         pass
 
     def __lt__(self, other):
+        # Check if a node is less than other
         return False
+
+
+# A* functions
+def h(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    return abs(x1 - x2) + abs(y1 - y2)
