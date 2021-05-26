@@ -92,8 +92,28 @@ def h(p1, p2):
     return abs(x1 - x2) + abs(y1 - y2)
 
 
+# Grid functions
 def makeGrid(rows, width):
     gap = width // rows
     grid = [[Node(i, j, gap, rows) for j in range(rows)] for i in range(rows)]
 
     return grid
+
+
+def drawGrid(win, rows, width):
+    gap = width // rows
+    for i in range(rows):
+        pygame.draw.line(win, GREY, (0, i * gap), (width, i * gap))
+        for j in range(rows):
+            pygame.draw.line(win, GREY, (j * gap, 0), (i * gap, width))
+
+
+def draw(win, grid, rows, width):
+    win.fill(WHITE)
+
+    for row in grid:
+        for node in row:
+            node.draw(win)
+
+    drawGrid(win, rows, width)
+    pygame.display.update()
