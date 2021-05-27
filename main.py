@@ -1,3 +1,4 @@
+from BFSNode import BFSNode
 from DijkstraNode import DijkstraNode
 import pygame
 import math
@@ -38,7 +39,6 @@ def algorithm(draw, grid, start, end, algoNum):
         gScore[start] = 0
         fScore = {node: math.inf for row in grid for node in row}
         fScore[start] = h(start.getPos(), end.getPos())
-        openSetHash = {start}
 
         while not openSet.empty():
             for event in pygame.event.get():
@@ -46,7 +46,6 @@ def algorithm(draw, grid, start, end, algoNum):
                     pygame.quit()
 
             current = openSet.get()[2]
-            openSetHash.remove(current)
 
             if current == end:
                 reconstructPath(prevNode, current, start, draw)
@@ -60,10 +59,9 @@ def algorithm(draw, grid, start, end, algoNum):
                     gScore[neighbor] = tempGScore
                     fScore[neighbor] = tempGScore + h(neighbor.getPos(), end.getPos())
 
-                    if neighbor not in openSetHash:
+                    if not neighbor.isOpen():
                         count += 1
                         openSet.put((fScore[neighbor], count, neighbor))
-                        openSetHash.add(neighbor)
                         if neighbor != end:
                             neighbor.makeOpen()
 
@@ -76,17 +74,18 @@ def algorithm(draw, grid, start, end, algoNum):
 
     # Dijkstra Algorithm
     elif algoNum == 1:
-        visitingNodes = PriorityQueue()
+        openNodes = PriorityQueue()
         grid[start.row][start.col].distance = 0
-        visitingNodes.put(start)
+        openNodes.put(start)
         prevNode = {}
+        visited = set()
 
-        while not visitingNodes.empty():
+        while not openNodes.empty():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
 
-            current = visitingNodes.get()
+            current = openNodes.get()
 
             if current == end:
                 reconstructPath(prevNode, current, start, draw)
@@ -98,16 +97,57 @@ def algorithm(draw, grid, start, end, algoNum):
                 if (
                     not neighbor.isBarrier()
                     and totalDist < neighbor.distance
-                    and not neighbor.isClosed()
+                    and neighbor not in visited
                 ):
                     neighbor.distance = totalDist
                     prevNode[neighbor] = current
-                    visitingNodes.put(neighbor)
+                    openNodes.put(neighbor)
                     # visitingNodesHash.add(neighbor)
                     if neighbor != end:
                         neighbor.makeOpen()
+            draw()
 
-            # visited.add(current)
+            visited.add(current)
+            if current != start:
+                current.makeClosed()
+
+        return False
+
+    # BFS Algorithm
+    elif algoNum == 2:
+        count = 0
+        openNodes = PriorityQueue()
+        openNodes.put((count, start))
+        prevNode = {}
+        visited = set()
+
+        while not openNodes.empty():
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+            current = openNodes.get()[1]
+
+            if current == end:
+                reconstructPath(prevNode, current, start, draw)
+                return True
+
+            for neighbor in current.neighbors:
+                if (
+                    not neighbor.isBarrier()
+                    and neighbor not in visited
+                    and not neighbor.isOpen()
+                ):
+                    count += 1
+                    prevNode[neighbor] = current
+                    openNodes.put((count, neighbor))
+
+                    if neighbor != end:
+                        neighbor.makeOpen()
+
+            draw()
+
+            visited.add(current)
             if current != start:
                 current.makeClosed()
 
@@ -130,6 +170,13 @@ def makeGrid(rows, width, algoNum):
             [DijkstraNode(i, j, gap, rows, math.inf) for j in range(rows)]
             for i in range(rows)
         ]
+
+        return grid
+
+    # BFS
+    elif algoNum == 2:
+        gap = width // rows
+        grid = [[BFSNode(i, j, gap, rows) for j in range(rows)] for i in range(rows)]
 
         return grid
 
