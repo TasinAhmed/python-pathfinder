@@ -5,7 +5,7 @@ from queue import PriorityQueue
 from colors import *
 from AstarNode import AstarNode
 
-ALGORITHM_NUM = 0
+ALGORITHM_NUM = 1
 WIDTH = 800
 WIN = pygame.display.set_mode((WIDTH, WIDTH))
 pygame.display.set_caption("Pathfinder")
@@ -27,76 +27,104 @@ def h(p1, p2):
     return abs(x1 - x2) + abs(y1 - y2)
 
 
-def astar(draw, grid, start, end):
-    count = 0
-    openSet = PriorityQueue()
-    openSet.put((0, count, start))
-    prevNode = {}
-    gScore = {node: math.inf for row in grid for node in row}
-    gScore[start] = 0
-    fScore = {node: math.inf for row in grid for node in row}
-    fScore[start] = h(start.getPos(), end.getPos())
-    openSetHash = {start}
+def algorithm(draw, grid, start, end, algoNum):
+    # A* Algorithm
+    if algoNum == 0:
+        count = 0
+        openSet = PriorityQueue()
+        openSet.put((0, count, start))
+        prevNode = {}
+        gScore = {node: math.inf for row in grid for node in row}
+        gScore[start] = 0
+        fScore = {node: math.inf for row in grid for node in row}
+        fScore[start] = h(start.getPos(), end.getPos())
+        openSetHash = {start}
 
-    while not openSet.empty():
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
+        while not openSet.empty():
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
 
-        current = openSet.get()[2]
-        openSetHash.remove(current)
+            current = openSet.get()[2]
+            openSetHash.remove(current)
 
-        if current == end:
-            reconstructPath(prevNode, current, start, draw)
-            return True
+            if current == end:
+                reconstructPath(prevNode, current, start, draw)
+                return True
 
-        for neighbor in current.neighbors:
-            tempGScore = gScore[current] + 1
+            for neighbor in current.neighbors:
+                tempGScore = gScore[current] + 1
 
-            if tempGScore < gScore[neighbor]:
-                prevNode[neighbor] = current
-                gScore[neighbor] = tempGScore
-                fScore[neighbor] = tempGScore + h(neighbor.getPos(), end.getPos())
+                if tempGScore < gScore[neighbor]:
+                    prevNode[neighbor] = current
+                    gScore[neighbor] = tempGScore
+                    fScore[neighbor] = tempGScore + h(neighbor.getPos(), end.getPos())
 
-                if neighbor not in openSetHash:
-                    count += 1
-                    openSet.put((fScore[neighbor], count, neighbor))
-                    openSetHash.add(neighbor)
+                    if neighbor not in openSetHash:
+                        count += 1
+                        openSet.put((fScore[neighbor], count, neighbor))
+                        openSetHash.add(neighbor)
+                        if neighbor != end:
+                            neighbor.makeOpen()
+
+            draw()
+
+            if current != start:
+                current.makeClosed()
+
+        return False
+
+    # Dijkstra Algorithm
+    elif algoNum == 1:
+        visitingNodes = PriorityQueue()
+        grid[start.row][start.col].distance = 0
+        visitingNodes.put(start)
+        prevNode = {}
+
+        while not visitingNodes.empty():
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+            current = visitingNodes.get()
+
+            if current == end:
+                reconstructPath(prevNode, current, start, draw)
+                return True
+
+            for neighbor in current.neighbors:
+                totalDist = current.distance + 1
+
+                if (
+                    not neighbor.isBarrier()
+                    and totalDist < neighbor.distance
+                    and not neighbor.isClosed()
+                ):
+                    neighbor.distance = totalDist
+                    prevNode[neighbor] = current
+                    visitingNodes.put(neighbor)
+                    # visitingNodesHash.add(neighbor)
                     if neighbor != end:
                         neighbor.makeOpen()
 
-        draw()
+            # visited.add(current)
+            if current != start:
+                current.makeClosed()
 
-        if current != start:
-            current.makeClosed()
-
-    return False
-
-
-# Dijkstras
-def dijkstras(draw, grid, start, end):
-    grid[start.row][start.col].distance = 0
-    visitingNodes = PriorityQueue()
-
-    while not visitingNodes.empty():
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-
-    return False
+        return False
 
 
 # Grid functions
-def makeGrid(rows, width, algo):
+def makeGrid(rows, width, algoNum):
     # A*
-    if algo == 0:
+    if algoNum == 0:
         gap = width // rows
         grid = [[AstarNode(i, j, gap, rows) for j in range(rows)] for i in range(rows)]
 
         return grid
 
     # Dijkstra
-    elif algo == 1:
+    elif algoNum == 1:
         gap = width // rows
         grid = [
             [DijkstraNode(i, j, gap, rows, math.inf) for j in range(rows)]
@@ -137,7 +165,7 @@ def getClickedPos(pos, rows, width):
 
 def main(win, width):
     ROWS = 50
-    grid = makeGrid(ROWS, width, 0)
+    grid = makeGrid(ROWS, width, ALGORITHM_NUM)
 
     start = None
     end = None
@@ -188,12 +216,18 @@ def main(win, width):
                         for node in row:
                             node.updateNeighbors(grid)
 
-                    astar(lambda: draw(win, grid, ROWS, width), grid, start, end)
+                    algorithm(
+                        lambda: draw(win, grid, ROWS, width),
+                        grid,
+                        start,
+                        end,
+                        ALGORITHM_NUM,
+                    )
 
                 if event.key == pygame.K_r:
                     start = None
                     end = None
-                    grid = makeGrid(ROWS, width, 0)
+                    grid = makeGrid(ROWS, width, ALGORITHM_NUM)
 
     pygame.quit()
 
