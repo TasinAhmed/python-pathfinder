@@ -90,3 +90,7 @@ class Node:
 
         if self.col > 0 and not grid[self.row][self.col - 1].isBarrier():
             self.neighbors.append(grid[self.row][self.col - 1])
+
+    def __lt__(self, other):
+        # Check if a node is less than other
+        return False
